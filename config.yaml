@@ -1,0 +1,7 @@
+depth_map_folder: /path/to/depth_maps/
+output_folder: /path/to/output/
+
+intrinsic_matrix:
+  - [fx, 0, cx]
+  - [0, fy, cy]
+  - [0, 0, 1]
