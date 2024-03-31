@@ -5,7 +5,7 @@ from video_combining import VideoCombining
 
 app = Flask(__name__)
 
-combining = VideoCombining("192.168.0.2", 8000)  # IP address and port number of Raspberry Pi 2
+combining = VideoCombining("192.168.0.2", 8000)  # IP address and port number of Raspberry Pi 1
 
 def gen_frames():
     while True:
