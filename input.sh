@@ -19,6 +19,7 @@ PI2_OUTPUT_PATH="/home/pi/project/output"
 ssh pi@$PI1_IP "mkdir -p $PI1_DEPTH_PATH $PI1_INTRINSICS_PATH"
 ssh pi@$PI2_IP "mkdir -p $PI2_IMAGES_PATH $PI2_DEPTH_PATH $PI2_INTRINSICS_PATH $PI2_OUTPUT_PATH"
 
+
 # Copy the camera intrinsic matrices to the Raspberry Pis
 scp camera_intrinsics.txt pi@$PI1_IP:$PI1_INTRINSICS_PATH/
 scp camera_intrinsics.txt pi@$PI2_IP:$PI2_INTRINSICS_PATH/
