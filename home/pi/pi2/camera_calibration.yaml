@@ -1,0 +1,23 @@
+left_camera_matrix:
+  - [fx_left, 0, cx_left]
+  - [0, fy_left, cy_left]
+  - [0, 0, 1]
+
+left_distortion_coeffs:
+  - [k1_left, k2_left, p1_left, p2_left, k3_left]
+
+right_camera_matrix:
+  - [fx_right, 0, cx_right]
+  - [0, fy_right, cy_right]
+  - [0, 0, 1]
+
+right_distortion_coeffs:
+  - [k1_right, k2_right, p1_right, p2_right, k3_right]
+
+stereo_rotation:
+  - [r11, r12, r13]
+  - [r21, r22, r23]
+  - [r31, r32, r33]
+
+stereo_translation:
+  - [t1, t2, t3]

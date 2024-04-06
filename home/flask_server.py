@@ -1,30 +1,44 @@
 from flask import Flask, Response, render_template
 import cv2
 import threading
-from video_combining import VideoCombining
+import paramiko
 from diagnostics import DiagnosticsLogger
 
 app = Flask(__name__)
-combining = VideoCombining("192.168.0.2", 8000)  # IP address and port number of Raspberry Pi 1
 diagnostics_logger = DiagnosticsLogger("diagnostic.log")
+
+# SSH connection details for Raspberry Pi 1
+pi1_hostname = "192.168.0.2"  # Replace with the IP address of Raspberry Pi 1
+pi1_username = "pi"  # Replace with the username for Raspberry Pi 1
+pi1_password = "raspberry"  # Replace with the password for Raspberry Pi 1
+
+# SSH connection details for Raspberry Pi 2
+pi2_hostname = "192.168.0.3"  # Replace with the IP address of Raspberry Pi 2
+pi2_username = "pi"  # Replace with the username for Raspberry Pi 2
+pi2_password = "raspberry"  # Replace with the password for Raspberry Pi 2
+
+def ssh_command(hostname, username, password, command):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname, username=username, password=password)
+    stdin, stdout, stderr = ssh.exec_command(command)
+    ssh.close()
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-def gen_frames():
-    while True:
-        combined_frame = combining.get_combined_frame()
-        if combined_frame is not None:
-            ret, buffer = cv2.imencode('.jpg', combined_frame)
-            frame = buffer.tobytes()
-            diagnostics_logger.log_frame_processing_time()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+@app.route('/start_capture')
+def start_capture():
+    command = "python /path/to/raspberry_pi_1/capture_images.py"
+    threading.Thread(target=ssh_command, args=(pi1_hostname, pi1_username, pi1_password, command)).start()
+    return "Image capture started on Raspberry Pi 1"
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/start_3d_modeling')
+def start_3d_modeling():
+    command = "python /path/to/raspberry_pi_2/create_3d_model.py"
+    threading.Thread(target=ssh_command, args=(pi2_hostname, pi2_username, pi2_password, command)).start()
+    return "3D modeling started on Raspberry Pi 2"
 
 @app.route('/diagnostics')
 def diagnostics():
@@ -32,21 +46,13 @@ def diagnostics():
     return render_template('diagnostics.html', logs=logs)
 
 def main():
-    def receive_thread():
-        combining.receive_frames()
-
     try:
-        combining.start_server()
-        receive_thread = threading.Thread(target=receive_thread, daemon=True)
-        receive_thread.start()
         diagnostics_logger.start_logging()
         app.run(host='0.0.0.0', port=5000, threaded=True)
     except KeyboardInterrupt:
         print("Keyboard interrupt received. Shutting down.")
     finally:
-        combining.stop_server()
         diagnostics_logger.stop_logging()
-        receive_thread.join()
 
 if __name__ == "__main__":
     main()
