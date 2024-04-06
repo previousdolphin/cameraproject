@@ -1,8 +1,67 @@
+import cv2
 import numpy as np
+import os
+import yaml
 import time
-import sys
+import subprocess
 
-# ...
+# Load camera calibration data
+with open('camera_calibration.yaml', 'r') as file:
+    calibration_data = yaml.safe_load(file)
+
+# Extract calibration parameters for each camera
+camera_params = calibration_data['camera_params']
+
+def capture_images():
+    cameras = []
+    for i in range(4):
+        camera = cv2.VideoCapture(i)
+        cameras.append(camera)
+
+    while True:
+        frames = []
+        for camera in cameras:
+            ret, frame = camera.read()
+            if ret:
+                frames.append(frame)
+
+        if len(frames) == 4:
+            depth_maps = []
+            for i in range(4):
+                # Perform depth map computation for each camera pair
+                left_frame = frames[i]
+                right_frame = frames[(i+1) % 4]
+                left_camera_matrix = np.array(camera_params[i]['camera_matrix'])
+                left_distortion_coeffs = np.array(camera_params[i]['distortion_coeffs'])
+                right_camera_matrix = np.array(camera_params[(i+1) % 4]['camera_matrix'])
+                right_distortion_coeffs = np.array(camera_params[(i+1) % 4]['distortion_coeffs'])
+
+                # Undistort the images using camera calibration data
+                left_undistorted = cv2.undistort(left_frame, left_camera_matrix, left_distortion_coeffs)
+                right_undistorted = cv2.undistort(right_frame, right_camera_matrix, right_distortion_coeffs)
+
+                # Compute depth map for the camera pair
+                stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
+                disparity = stereo.compute(cv2.cvtColor(left_undistorted, cv2.COLOR_BGR2GRAY),
+                                           cv2.cvtColor(right_undistorted, cv2.COLOR_BGR2GRAY))
+                depth_map = cv2.normalize(disparity, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+                depth_maps.append(depth_map)
+
+            # Save depth maps to files
+            timestamp = int(time.time())
+            for i, depth_map in enumerate(depth_maps):
+                depth_map_filename = f'depth_map_{i}_{timestamp}.png'
+                cv2.imwrite(depth_map_filename, depth_map)
+
+                # Transfer depth map to Raspberry Pi 2
+                subprocess.run(['scp', depth_map_filename, 'pi@raspberrypi2:/path/to/depth_maps/'])
+
+                # Remove the depth map file after transfer
+                os.remove(depth_map_filename)
+
+    for camera in cameras:
+        camera.release()
+
 
 def read_camera_intrinsics(file_path):
     with open(file_path, 'r') as file:
