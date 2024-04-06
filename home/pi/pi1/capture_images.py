@@ -1,8 +1,52 @@
 import numpy as np
 import time
 import sys
+import cv2
+import numpy as np
+import os
+import yaml
+import time
+import subprocess
 
-# ...
+# Load camera calibration data
+with open('camera_calibration.yaml', 'r') as file:
+    calibration_data = yaml.safe_load(file)
+
+# Extract calibration parameters for each camera
+camera_params = calibration_data['camera_params']
+
+def capture_images():
+    cameras = []
+    for i in range(4):
+        camera = cv2.VideoCapture(i)
+        cameras.append(camera)
+
+    while True:
+        frames = []
+        for camera in cameras:
+            ret, frame = camera.read()
+            if ret:
+                frames.append(frame)
+
+        if len(frames) == 4:
+            # Perform depth map computation using the frames from all cameras
+            # ...
+
+            # Save depth map to a file
+            timestamp = int(time.time())
+            depth_map_filename = f'depth_map_{timestamp}.png'
+            cv2.imwrite(depth_map_filename, depth_map)
+
+            # Transfer depth map to Raspberry Pi 2
+            subprocess.run(['scp', depth_map_filename, 'pi@raspberrypi2:/path/to/depth_maps/'])
+
+            # Remove the depth map file after transfer
+            os.remove(depth_map_filename)
+
+    for camera in cameras:
+        camera.release()
+
+
 
 def read_camera_intrinsics(file_path):
     with open(file_path, 'r') as file:
