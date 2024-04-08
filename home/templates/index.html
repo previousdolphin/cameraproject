@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Streaming</title>
+</head>
+<body>
+    <h1>Video Streaming</h1>
+    <img src="{{ url_for('video_feed') }}" width="640" height="480">
+    <br><br>
+    <a href="{{ url_for('diagnostics') }}">View Diagnostics</a>
+    <br><br>
+<a href="{{ url_for('generate_3d') }}">Generate and Download 3D Model</a>
+
+</body>
+</html>

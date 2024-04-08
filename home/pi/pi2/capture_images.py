@@ -1,8 +1,52 @@
 import numpy as np
 import time
 import sys
+import cv2
+import numpy as np
+import os
+import yaml
+import time
+import subprocess
 
-# ...
+# Load camera calibration data
+with open('camera_calibration.yaml', 'r') as file:
+    calibration_data = yaml.safe_load(file)
+
+# Extract calibration parameters for each camera
+camera_params = calibration_data['camera_params']
+
+def capture_images():
+    cameras = []
+    for i in range(4):
+        camera = cv2.VideoCapture(i)
+        cameras.append(camera)
+
+    while True:
+        frames = []
+        for camera in cameras:
+            ret, frame = camera.read()
+            if ret:
+                frames.append(frame)
+
+        if len(frames) == 4:
+            # Perform depth map computation using the frames from all cameras
+            # ...
+
+            # Save depth map to a file
+            timestamp = int(time.time())
+            depth_map_filename = f'depth_map_{timestamp}.png'
+            cv2.imwrite(depth_map_filename, depth_map)
+
+            # Transfer depth map to Raspberry Pi 2
+            subprocess.run(['scp', depth_map_filename, 'pi@raspberrypi2:/path/to/depth_maps/'])
+
+            # Remove the depth map file after transfer
+            os.remove(depth_map_filename)
+
+    for camera in cameras:
+        camera.release()
+
+
 
 def read_camera_intrinsics(file_path):
     with open(file_path, 'r') as file:
@@ -25,21 +69,6 @@ camera_intrinsics = read_camera_intrinsics(intrinsics_path)
 # ...
 
 
-
-def start_recording(duration):
-    # Start capturing images and computing depth maps
-    start_time = time.time()
-    while time.time() - start_time < duration:
-        # Capture images and compute depth maps
-        # ...
-
-    # Transfer depth maps to Raspberry Pi 2
-    # ...
-
-def stop_recording():
-    # Stop capturing images and computing depth maps
-    # ...
-
 # Main program
 if len(sys.argv) > 1:
     duration = int(sys.argv[1])
@@ -47,15 +76,6 @@ if len(sys.argv) > 1:
 else:
     stop_recording()
 
-
-#####Add in below:
-
-import cv2
-import numpy as np
-import os
-import yaml
-import time
-import subprocess
 
 # Load camera calibration data
 with open('camera_calibration.yaml', 'r') as file:
@@ -75,23 +95,27 @@ stereo_config.setNumDisparities(128)
 stereo_config.setBlockSize(15)
 
 def capture_images():
-    left_camera = cv2.VideoCapture(0)  # Adjust the camera index if necessary
-    right_camera = cv2.VideoCapture(1)  # Adjust the camera index if necessary
+    cameras = []
+    for i in range(4):
+        camera = cv2.VideoCapture(i)
+        cameras.append(camera)
 
+    frame_count = 0
     while True:
-        # Capture images from left and right cameras
-        ret_left, left_frame = left_camera.read()
-        ret_right, right_frame = right_camera.read()
+        frames = []
+        for camera in cameras:
+            ret, frame = camera.read()
+            if ret:
+                frames.append(frame)
 
-        if ret_left and ret_right:
-            # Undistort the images using camera calibration data
-            left_undistorted = cv2.undistort(left_frame, left_camera_matrix, left_distortion_coeffs)
-            right_undistorted = cv2.undistort(right_frame, right_camera_matrix, right_distortion_coeffs)
+        if len(frames) == 4:
+            # Save the captured frames as JPEG images
+            for i, frame in enumerate(frames):
+                frame_filename = f'frame{i+1}_{frame_count}.jpg'
+                cv2.imwrite(frame_filename, frame)
 
-            # Compute depth map
-            disparity = stereo_config.compute(cv2.cvtColor(left_undistorted, cv2.COLOR_BGR2GRAY),
-                                              cv2.cvtColor(right_undistorted, cv2.COLOR_BGR2GRAY))
-            depth_map = cv2.normalize(disparity, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+            # Perform depth map computation using the frames from all cameras
+            # ...
 
             # Save depth map to a file
             timestamp = int(time.time())
@@ -104,11 +128,10 @@ def capture_images():
             # Remove the depth map file after transfer
             os.remove(depth_map_filename)
 
-        else:
-            break
+            frame_count += 1
 
-    left_camera.release()
-    right_camera.release()
+    for camera in cameras:
+        camera.release()
 
 def start_recording(duration):
     start_time = time.time()
