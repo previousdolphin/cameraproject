@@ -132,7 +132,7 @@ def capture_images():
 
     for camera in cameras:
         camera.release()
-
+        
 def start_recording(duration):
     start_time = time.time()
 
