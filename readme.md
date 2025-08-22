@@ -99,6 +99,16 @@ The control computer communicates with the Raspberry Pis via SSH to start and mo
 - Check the diagnostic logs on the Raspberry Pis and the control computer for any error messages or warnings.
 - Ensure that all the required libraries and dependencies are installed correctly on the Raspberry Pis and the control computer.
 
+## Running Tests
+
+The project includes automated tests built with `pytest`. Run the entire test suite from the repository root with:
+
+```bash
+pytest
+```
+
+This command executes all tests, including diagnostics logging checks.
+
 ## Contributing
 
 Contributions to this project are welcome. If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the project repository.
