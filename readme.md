@@ -88,9 +88,11 @@ The control computer communicates with the Raspberry Pis via SSH to start and mo
 
 5. Monitor the progress and diagnostic information displayed on the web interface.
 
-6. The captured images and generated 3D models will be stored on the respective Raspberry Pis.
+6. For a customizable monitoring view, open `vr_viewer.html` in a browser. It includes placeholders for eight camera feeds and lets you cycle through them individually or display them in single-row or two-row layouts with optional borders. Modify the `cameraUrls` array in the file to match your setup.
 
-7. To stop the system, press `Ctrl+C` in the terminal where the Flask server is running.
+7. The captured images and generated 3D models will be stored on the respective Raspberry Pis.
+
+8. To stop the system, press `Ctrl+C` in the terminal where the Flask server is running.
 
 ## Troubleshooting
 
