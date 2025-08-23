@@ -1,11 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>Camera Monitor</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #111; color: #fff; }
+    #controls { background: #222; padding: 10px; display: flex; gap: 10px; align-items: center; }
+    #cameraContainer { display: grid; width: 100vw; height: calc(100vh - 60px); }
+    .camera { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    .camera img { width: 100%; height: 100%; object-fit: cover; }
+    .border { border: 4px solid #4caf50; box-sizing: border-box; }
+    .hidden { display: none; }
+  </style>
 </head>
 <body>
-    <a-scene>
-        <a-sky src="http://<raspberry_pi_ip>:5000/video_feed" rotation="0 -90 0"></a-sky>
-    </a-scene>
+  <div id="controls">
+    <label>Layout
+      <select id="layout">
+        <option value="single">Single</option>
+        <option value="row">Row</option>
+        <option value="grid">Two Rows</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="border"> Borders</label>
+    <button id="prev">Prev</button>
+    <button id="next">Next</button>
+    <label><input type="checkbox" id="auto"> Auto Cycle</label>
+  </div>
+  <div id="cameraContainer"></div>
+
+  <script>
+    // Replace the URLs below with your camera feed endpoints
+    const cameraUrls = [
+      'http://camera1:5000/video_feed',
+      'http://camera2:5000/video_feed',
+      'http://camera3:5000/video_feed',
+      'http://camera4:5000/video_feed',
+      'http://camera5:5000/video_feed',
+      'http://camera6:5000/video_feed',
+      'http://camera7:5000/video_feed',
+      'http://camera8:5000/video_feed'
+    ];
+
+    const container = document.getElementById('cameraContainer');
+    const layoutSelect = document.getElementById('layout');
+    const borderToggle = document.getElementById('border');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const autoToggle = document.getElementById('auto');
+    let currentIndex = 0;
+    let autoInterval = null;
+
+    // Create elements for each camera feed
+    function buildCameras() {
+      container.innerHTML = '';
+      cameraUrls.forEach(url => {
+        const div = document.createElement('div');
+        div.className = 'camera';
+        const img = document.createElement('img');
+        img.src = url;
+        div.appendChild(img);
+        container.appendChild(div);
+      });
+      applyLayout();
+    }
+
+    // Apply the selected layout to the camera feeds
+    function applyLayout() {
+      const cameras = Array.from(document.querySelectorAll('.camera'));
+      const layout = layoutSelect.value;
+      cameras.forEach(c => c.classList.remove('hidden'));
+      if (layout === 'single') {
+        container.style.gridTemplateColumns = '1fr';
+        container.style.gridTemplateRows = '1fr';
+        cameras.forEach((c, i) => { if (i !== currentIndex) c.classList.add('hidden'); });
+      } else if (layout === 'row') {
+        container.style.gridTemplateColumns = `repeat(${cameraUrls.length}, 1fr)`;
+        container.style.gridTemplateRows = '1fr';
+      } else if (layout === 'grid') {
+        const cols = Math.ceil(cameraUrls.length / 2);
+        container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        container.style.gridTemplateRows = '1fr 1fr';
+      }
+      toggleBorders();
+    }
+
+    // Toggle borders around each feed
+    function toggleBorders() {
+      const add = borderToggle.checked;
+      document.querySelectorAll('.camera').forEach(c => {
+        c.classList.toggle('border', add);
+      });
+    }
+
+    // Show the next camera in single layout
+    function nextCamera() {
+      currentIndex = (currentIndex + 1) % cameraUrls.length;
+      applyLayout();
+    }
+
+    // Show the previous camera in single layout
+    function prevCamera() {
+      currentIndex = (currentIndex - 1 + cameraUrls.length) % cameraUrls.length;
+      applyLayout();
+    }
+
+    layoutSelect.addEventListener('change', applyLayout);
+    borderToggle.addEventListener('change', toggleBorders);
+    nextBtn.addEventListener('click', nextCamera);
+    prevBtn.addEventListener('click', prevCamera);
+    autoToggle.addEventListener('change', () => {
+      if (autoToggle.checked) {
+        autoInterval = setInterval(nextCamera, 5000);
+      } else {
+        clearInterval(autoInterval);
+      }
+    });
+
+    buildCameras();
+  </script>
 </body>
 </html>
